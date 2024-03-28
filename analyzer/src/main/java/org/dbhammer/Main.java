@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
-    private static final String SQL_FILE_DIRECTORY = "/home/jw/QueryPlanInject/analyzer/src/main/java/org/dbhammer/artemis_sql/";
+    private static final String SQL_FILE_DIRECTORY = "src/main/java/org/dbhammer/artemis_sql/";
     private static final String QErrorThreshold = "10";
 
     private static List<String> loadAllQueries() {
@@ -70,10 +70,13 @@ public class Main {
             // Generate the new query with join order hints
             String queryHintByPG = obInstance.generateJoinOrderHint(pgInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(pgInfo.getPhysicalOp());
             String queryHintByTiDB = obInstance.generateJoinOrderHint(tidbInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(tidbInfo.getPhysicalOp());
+            String queryHintByOB = obInstance.generateJoinOrderHint(obInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(obInfo.getPhysicalOp());
             String newQueryByPG = " /*+ " + queryHintByPG + " */ " + query;
             String newQueryByTiDB = " /*+ " + queryHintByTiDB + " */ " + query;
+            String newQueryByOB = " /*+ " + queryHintByOB + " */ " + query;
             System.out.println("New Query with Join Order Hints by PG: " + newQueryByPG);
             System.out.println("New Query with Join Order Hints by TiDB: " + newQueryByTiDB);
+            System.out.println("New Query with Join Order Hints by OB: " + newQueryByOB);
             CostAndLatencyPair oriQueryResult = obInstance.executeQuery(query);
             CostAndLatencyPair newQueryResultByPG = obInstance.executeQuery(newQueryByPG);
             CostAndLatencyPair newQueryResultByTiDB = obInstance.executeQuery(newQueryByTiDB);

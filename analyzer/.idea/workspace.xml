@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7fe65f9f-fe24-4192-b545-aeea2124be6d" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/dbhammer/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/dbhammer/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/dbhammer/PostgresInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/dbhammer/PostgresInstance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/dbhammer/artemis_sql/1.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/dbhammer/artemis_sql/1.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/dbhammer/OceanBaseInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/dbhammer/OceanBaseInstance.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,7 +53,7 @@
     "project.structure.side.proportion": "0.2",
     "settings.editor.selected.configurable": "vcs.Git",
     "vue.rearranger.settings.migration": "true",
-    "应用程序.Main.executor": "Run",
+    "应用程序.Main.executor": "Debug",
     "应用程序.PostgreSQLConnectionDemo.executor": "Run",
     "应用程序.testPG.executor": "Run"
   }
@@ -130,7 +130,7 @@
       <workItem from="1711462249946" duration="29701000" />
       <workItem from="1711592516424" duration="1885000" />
       <workItem from="1711601666675" duration="62000" />
-      <workItem from="1711601742248" duration="2354000" />
+      <workItem from="1711601742248" duration="3878000" />
     </task>
     <servers />
   </component>
@@ -140,10 +140,16 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
+        <line-breakpoint enabled="true" type="java-field">
           <url>file://$PROJECT_DIR$/src/main/java/org/dbhammer/Main.java</url>
-          <line>67</line>
-          <option name="timeStamp" value="13" />
+          <line>15</line>
+          <properties field="SQL_FILE_DIRECTORY" class="org.dbhammer.Main" />
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/dbhammer/OceanBaseInstance.java</url>
+          <line>128</line>
+          <option name="timeStamp" value="25" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

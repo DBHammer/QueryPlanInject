@@ -98,14 +98,15 @@ public class OceanBaseInstance implements DBInstance {
             extractTableNames(node.get("CHILD_1"), tables, queryPlanInfo);
         if (node.has("CHILD_2"))
             extractTableNames(node.get("CHILD_2"), tables, queryPlanInfo);
-        if (node.has("NAME") && !node.get("NAME").asText().isEmpty())
+        if (node.has("NAME") && !node.get("NAME").asText().isEmpty() && !node.get("NAME").asText().contains("EX"))
             tables.add(node.get("NAME").asText());
         if (node.has("OPERATOR") && node.get("OPERATOR").asText().contains("JOIN") && tables.size() >= 2) {
             String operator = node.get("OPERATOR").asText();
             int estRows = node.get("EST.ROWS").asInt();
+            int trueRows = estRows;
             String table1 = tables.get(tables.size() - 2);
             String table2 = tables.get(tables.size() - 1);
-            queryPlanInfo.addJoinOperation(new QueryPlanInfo.JoinOperation(table1, table2, operator, estRows, 0));
+            queryPlanInfo.addJoinOperation(new QueryPlanInfo.JoinOperation(table1, table2, operator, estRows, trueRows));
             queryPlanInfo.addJoinOrder(table1);
             queryPlanInfo.addJoinOrder(table2);
         }
@@ -126,13 +127,15 @@ public class OceanBaseInstance implements DBInstance {
     public String generatePhysicalOpHint(List<QueryPlanInfo.JoinOperation> physicalOp) {
         StringBuilder hintBuilder = new StringBuilder();
         for (QueryPlanInfo.JoinOperation operation : physicalOp) {
-            switch (operation.getJoinType().toLowerCase()) {
+            String opType = operation.getJoinType().toLowerCase().trim();
+            switch (opType) {
                 case "mergejoin":       // tidb
                 case "merge join":      // pg
                     hintBuilder.append(generateMergeHint(operation.getTable2()));
                     break;
                 case "indexjoin":
                 case "nested loop":
+                case "nested-loop join":        // ob
                     hintBuilder.append(generateNlHint(operation.getTable2()));
                     break;
                 case "hashjoin":
