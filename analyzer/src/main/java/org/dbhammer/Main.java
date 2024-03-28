@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Main {
-    private static final String SQL_FILE_DIRECTORY = "src/main/java/org/dbhammer/artemis_sql/";
+    private static final String SQL_FILE_DIRECTORY = "/home/jw/QueryPlanInject/analyzer/src/main/java/org/dbhammer/artemis_sql/";
     private static final String QErrorThreshold = "10";
 
     private static List<String> loadAllQueries() {

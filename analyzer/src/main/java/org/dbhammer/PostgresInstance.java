@@ -23,8 +23,8 @@ public class PostgresInstance implements DBInstance {
     public Connection getConnection() {
         try {
             Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection("jdbc:postgresql://49.52.27.35:5432/test", "dase209", "");
-            System.out.println("Connected to the database");
+            connection = DriverManager.getConnection("jdbc:postgresql://49.52.27.20:5452/artemis", "postgres", "wsy");
+            System.out.println("Connected to pg");
         } catch (Exception e) {
             e.printStackTrace();
         }

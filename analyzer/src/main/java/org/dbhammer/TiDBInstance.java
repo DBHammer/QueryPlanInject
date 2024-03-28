@@ -15,8 +15,8 @@ public class TiDBInstance implements DBInstance {
     @Override
     public Connection getConnection() {
         try {
-            connection = DriverManager.getConnection("jdbc:mysql://113.31.105.196:4000/test", "root", "123456");
-            System.out.println("Connected to the database");
+            connection = DriverManager.getConnection("jdbc:mysql://49.52.27.20:4000/artemis", "root", "");
+            System.out.println("Connected to tidb");
         } catch (Exception e) {
             e.printStackTrace();
         }

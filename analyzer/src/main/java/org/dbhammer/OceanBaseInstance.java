@@ -16,8 +16,8 @@ public class OceanBaseInstance implements DBInstance {
     @Override
     public Connection getConnection() {
         try {
-            connection = DriverManager.getConnection("jdbc:mysql://49.52.27.33:2881/test", "root", "123456");
-            System.out.println("Connected to the database");
+            connection = DriverManager.getConnection("jdbc:mysql://49.52.27.33:2881/artemis", "root@test", "");
+            System.out.println("Connected to ob");
         } catch (Exception e) {
             e.printStackTrace();
         }
