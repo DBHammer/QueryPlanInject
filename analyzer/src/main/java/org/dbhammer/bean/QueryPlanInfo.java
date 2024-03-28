@@ -2,6 +2,7 @@ package org.dbhammer.bean;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class QueryPlanInfo {
 
     @Setter
     @Getter
+    @ToString
     public static class JoinOperation {
         private String table1;
         private String table2;

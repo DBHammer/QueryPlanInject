@@ -82,7 +82,7 @@ public class OceanBaseInstance implements DBInstance {
         if (node == null) return;
         List<String> tables = new ArrayList<>();
         extractTableNames(node, tables, queryPlanInfo);
-        if (node.has("OPERATOR") && node.get("OPERATOR").asText().toLowerCase().contains("JOIN") && tables.size() >= 2) {
+        if (node.has("OPERATOR") && node.get("OPERATOR").asText().toUpperCase().contains("JOIN") && tables.size() >= 2) {
             String operator = node.get("OPERATOR").asText();
             int estRows = node.get("EST.ROWS").asInt();
             String table1 = tables.get(tables.size() - 2);

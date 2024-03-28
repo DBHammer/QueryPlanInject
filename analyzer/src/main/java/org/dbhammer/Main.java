@@ -67,11 +67,18 @@ public class Main {
             QueryPlanInfo tidbInfo = tidbInstance.extractQueryPlan(tidbPlan);
             QueryPlanInfo pgInfo = pgInstance.extractQueryPlan(pgPlan);
 
+            System.out.println(obInfo.getJoinOrder());
+            System.out.println(pgInfo.getJoinOrder());
+            System.out.println(tidbInfo.getJoinOrder());
+
+
+
             // Generate the new query with join order hints
             String queryHintByPG = obInstance.generateJoinOrderHint(pgInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(pgInfo.getPhysicalOp());
             String queryHintByTiDB = obInstance.generateJoinOrderHint(tidbInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(tidbInfo.getPhysicalOp());
-            String newQueryByPG = " /*+ " + queryHintByPG + " */ " + query;
-            String newQueryByTiDB = " /*+ " + queryHintByTiDB + " */ " + query;
+            String[] splitSQL = query.split("select");
+            String newQueryByPG = "select /*+ query_timeout(40000000) " + queryHintByPG + " */ " + splitSQL[1];
+            String newQueryByTiDB = "select /*+ query_timeout(40000000) " + queryHintByTiDB + " */ " + splitSQL[1];
             System.out.println("New Query with Join Order Hints by PG: " + newQueryByPG);
             System.out.println("New Query with Join Order Hints by TiDB: " + newQueryByTiDB);
             CostAndLatencyPair oriQueryResult = obInstance.executeQuery(query);
