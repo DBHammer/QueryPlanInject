@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,27 +90,52 @@ public class PostgresInstance implements DBInstance {
             for (JsonNode subOp : node.get("Plans"))
                 extractOperations(subOp, queryPlanInfo, involvedTables);
         processJoinCondition("Join Filter", node, queryPlanInfo, involvedTables);       // 提取 NLJ 的条件
+        processJoinCondition("Index Cond", node, queryPlanInfo, involvedTables);        // 提取 INLJ 的条件
         processJoinCondition("Hash Cond", node, queryPlanInfo, involvedTables);
         processJoinCondition("Merge Cond", node, queryPlanInfo, involvedTables);
     }
 
     private static void processJoinCondition(String conditionType, JsonNode node, QueryPlanInfo queryPlanInfo, List<String> involvedTables) {
         if (node.has(conditionType)) {
-            String condition = node.path(conditionType).asText();
-            Matcher matcher = tablePattern.matcher(condition);
-            while (matcher.find()) {
-                String table1Name = matcher.group(1);
-                if (!involvedTables.contains(table1Name)) {
-                    involvedTables.add(table1Name);
-                    queryPlanInfo.addJoinOrder(table1Name);
+            if (Objects.equals(conditionType, "Index Cond")) {
+                String condition = node.path(conditionType).asText();
+                String regex = "=\\s*(table_\\d+)";
+                Pattern pattern = Pattern.compile(regex);
+                Matcher matcher = pattern.matcher(condition);
+                if (matcher.find()) {
+                    int estimatedRows = node.path("Plan Rows").asInt();
+                    String table1Name = node.path("Alias").asText();
+                    String table2Name = matcher.group(1);
+                    if (!involvedTables.contains(table1Name)) {
+                        involvedTables.add(table1Name);
+                        queryPlanInfo.addJoinOrder(table1Name);
+                    }
+                    if (!involvedTables.contains(table2Name)) {
+                        involvedTables.add(table2Name);
+                        queryPlanInfo.addJoinOrder(table2Name);
+                    }
+                    if (!condition.isEmpty())
+                        queryPlanInfo.addJoinOperation(new QueryPlanInfo.JoinOperation(table1Name, table2Name, "Nested Loop", estimatedRows, estimatedRows));
                 }
-                String table2Name = matcher.group(2);
-                if (!involvedTables.contains(table2Name)) {
-                    involvedTables.add(table2Name);
-                    queryPlanInfo.addJoinOrder(table2Name);
+
+            } else {
+                String condition = node.path(conditionType).asText();
+                Matcher matcher = tablePattern.matcher(condition);
+                while (matcher.find()) {
+                    int estimatedRows = node.path("Plan Rows").asInt();
+                    String table1Name = matcher.group(1);
+                    if (!involvedTables.contains(table1Name)) {
+                        involvedTables.add(table1Name);
+                        queryPlanInfo.addJoinOrder(table1Name);
+                    }
+                    String table2Name = matcher.group(2);
+                    if (!involvedTables.contains(table2Name)) {
+                        involvedTables.add(table2Name);
+                        queryPlanInfo.addJoinOrder(table2Name);
+                    }
+                    if (!condition.isEmpty())
+                        queryPlanInfo.addJoinOperation(new QueryPlanInfo.JoinOperation(table1Name, table2Name, node.path("Node Type").asText(), estimatedRows, estimatedRows));
                 }
-                if (!condition.isEmpty())
-                    queryPlanInfo.addJoinOperation(new QueryPlanInfo.JoinOperation(table1Name, table2Name, node.path("Node Type").asText(), 0, 0));
             }
         }
     }

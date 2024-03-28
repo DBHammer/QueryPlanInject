@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
     private static final String SQL_FILE_DIRECTORY = "/home/jw/QueryPlanInject/analyzer/src/main/java/org/dbhammer/artemis_sql/";
@@ -32,6 +34,19 @@ public class Main {
             return Collections.emptyList();
         }
     }
+
+    public static void regexExampleForPGINJ() {
+        String input = "(primarykey = table_3.fk_3)";
+        String regex = "=\\s*(table_\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.find()) {
+            System.out.println(matcher.group(1));
+        } else {
+            System.out.println("No match found");
+        }
+    }
+
 
     public static void main(String[] args) {
         DBInstance obInstance = new OceanBaseInstance();
