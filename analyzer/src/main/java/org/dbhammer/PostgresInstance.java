@@ -140,13 +140,12 @@ public class PostgresInstance implements DBInstance {
         }
     }
 
-    // TODO
     @Override
     public String generateJoinOrderHint(List<String> joinOrder) {
         if (joinOrder == null || joinOrder.isEmpty())
             return "";
-        String joinOrderStr = String.join(" ", joinOrder);
-        return String.format(" Leading(%s) ", joinOrderStr);
+        String joinOrderStr = String.join(" cross join ", joinOrder);
+        return joinOrderStr;
     }
 
 

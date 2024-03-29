@@ -3,9 +3,11 @@ package org.dbhammer.bean;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
+@ToString
 public class CostAndLatencyPair {
     private double cost;
     private double latency;

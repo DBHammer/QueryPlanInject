@@ -47,7 +47,6 @@ public class Main {
         }
     }
 
-
     public static void main(String[] args) {
         DBInstance obInstance = new OceanBaseInstance();
         DBInstance tidbInstance = new TiDBInstance();
@@ -67,38 +66,87 @@ public class Main {
             QueryPlanInfo tidbInfo = tidbInstance.extractQueryPlan(tidbPlan);
             QueryPlanInfo pgInfo = pgInstance.extractQueryPlan(pgPlan);
 
-            System.out.println(obInfo.getJoinOrder());
-            System.out.println(pgInfo.getJoinOrder());
-            System.out.println(tidbInfo.getJoinOrder());
-
-
-
             // Generate the new query with join order hints
-            String queryHintByPG = obInstance.generateJoinOrderHint(pgInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(pgInfo.getPhysicalOp());
-            String queryHintByTiDB = obInstance.generateJoinOrderHint(tidbInfo.getJoinOrder()) + obInstance.generatePhysicalOpHint(tidbInfo.getPhysicalOp());
-            String[] splitSQL = query.split("select");
-            String newQueryByPG = "select /*+ query_timeout(40000000) " + queryHintByPG + " */ " + splitSQL[1];
-            String newQueryByTiDB = "select /*+ query_timeout(40000000) " + queryHintByTiDB + " */ " + splitSQL[1];
-            System.out.println("New Query with Join Order Hints by PG: " + newQueryByPG);
-            System.out.println("New Query with Join Order Hints by TiDB: " + newQueryByTiDB);
-            CostAndLatencyPair oriQueryResult = obInstance.executeQuery(query);
-            CostAndLatencyPair newQueryResultByPG = obInstance.executeQuery(newQueryByPG);
-            CostAndLatencyPair newQueryResultByTiDB = obInstance.executeQuery(newQueryByTiDB);
-            // 计算加速比并打印结果
-            if (newQueryResultByTiDB.getLatency() < oriQueryResult.getLatency()) {
-                double speedupTiDB = (double) oriQueryResult.getLatency() / newQueryResultByTiDB.getLatency();
-                System.out.println("TiDB Speed-up: " + speedupTiDB);
+            // Don't use generatePhysicalOpHint, maybe run exceed times
+
+            // OB
+            String obQueryHintByPG = obInstance.generateJoinOrderHint(pgInfo.getJoinOrder());
+            String obQueryHintByTiDB = obInstance.generateJoinOrderHint(tidbInfo.getJoinOrder());
+
+            // PG
+            String pgQueryHintByOB = pgInstance.generateJoinOrderHint(obInfo.getJoinOrder());
+            String pgQueryHintByTiDB = pgInstance.generateJoinOrderHint(tidbInfo.getJoinOrder());
+
+            // TiDB
+            String tidbQueryHintByPG = tidbInstance.generateJoinOrderHint(pgInfo.getJoinOrder());
+            String tidbQueryHintByOB = tidbInstance.generateJoinOrderHint(obInfo.getJoinOrder());
+
+            // from ... where
+            String[] splitedSQLSelect = query.split("select");
+            String[] splitedSQLFrom = splitedSQLSelect[1].split("from");
+            String[] splitedSQLWhere = splitedSQLFrom[1].split("where");
+
+            // OB
+            String obNewQueryByPG = "select /*+ " + obQueryHintByPG + " */ " + splitedSQLSelect[1];
+            String obNewQueryByTiDB = "select /*+ " + obQueryHintByTiDB + " */ " + splitedSQLSelect[1];
+
+            // PG
+            String pgNewQueryByOB = "select " + splitedSQLFrom[0] + " from " + pgQueryHintByOB + " where "
+                    + splitedSQLWhere[1];
+            String pgNewQueryByTiDB = "select " + splitedSQLFrom[0] + " from " + pgQueryHintByTiDB + " where "
+                    + splitedSQLWhere[1];
+
+            String tidbNewQueryByPG = "select /*+ " + tidbQueryHintByPG + " */ " + splitedSQLSelect[1];
+            String tidbNewQueryByOB = "select /*+ " + tidbQueryHintByOB + " */ " + splitedSQLSelect[1];
+
+            // cold run and hot run
+            for (int i = 0; i < 2; i++) {
+                // OB
+                CostAndLatencyPair obOriQueryResult = obInstance.executeQuery(query);
+                CostAndLatencyPair obNewQueryResultByPG = obInstance.executeQuery(obNewQueryByPG);
+                CostAndLatencyPair obNewQueryResultByTiDB = obInstance.executeQuery(obNewQueryByTiDB);
+
+                // PG
+                CostAndLatencyPair pgOriQueryResult = pgInstance.executeQuery(query);
+                CostAndLatencyPair pgNewQueryResultByOB = pgInstance.executeQuery(pgNewQueryByOB);
+                CostAndLatencyPair pgNewQueryResultByTiDB = pgInstance.executeQuery(pgNewQueryByTiDB);
+
+                // TiDB
+                CostAndLatencyPair tidbOriQueryResult = tidbInstance.executeQuery(query);
+                CostAndLatencyPair tidbNewQueryResultByPG = tidbInstance.executeQuery(tidbNewQueryByPG);
+                CostAndLatencyPair tidbNewQueryResultByOB = tidbInstance.executeQuery(tidbNewQueryByOB);
+
+                if (i == 1) {
+                    compare(obOriQueryResult, obNewQueryResultByPG, obNewQueryResultByTiDB, "OB", "PG", "TiDB");
+                    compare(pgOriQueryResult, pgNewQueryResultByOB, pgNewQueryResultByTiDB, "PG", "OB", "TiDB");
+                    compare(tidbOriQueryResult, tidbNewQueryResultByPG, tidbNewQueryResultByOB, "TiDB", "PG", "OB");
+                }
             }
-            if (newQueryResultByPG.getLatency() < oriQueryResult.getLatency()) {
-                double speedupPG = (double) oriQueryResult.getLatency() / newQueryResultByPG.getLatency();
-                System.out.println("PG Speed-up: " + speedupPG);
-            }
-            if (oriQueryResult.isPartialOrderSatisfied(newQueryResultByPG) && oriQueryResult.isPartialOrderSatisfied(newQueryResultByTiDB)) {
-                System.out.println("Plan Enumerator is correct");
-            } else {
-                System.out.println("Plan Enumerator is incorrect");
-                // TODO: Compare Q-Error to check Cardinality Estimation or Cost Model
-            }
+        }
+    }
+
+    public static void compare(CostAndLatencyPair oriQueryResult, CostAndLatencyPair newQueryResult1,
+            CostAndLatencyPair newQueryResult2, String oridb, String db1, String db2) {
+        // 计算加速比并打印结果
+        if (newQueryResult1.getLatency() < oriQueryResult.getLatency()) {
+            double speedup1 = (double) oriQueryResult.getLatency() /
+                    newQueryResult1.getLatency();
+            System.out.println(db1 + " Speed-up: " + speedup1);
+        }
+        if (newQueryResult2.getLatency() < oriQueryResult.getLatency()) {
+            double speedup2 = (double) oriQueryResult.getLatency() /
+                    newQueryResult2.getLatency();
+            System.out.println(db2 + " Speed-up: " + speedup2);
+        }
+        if (oriQueryResult.isPartialOrderSatisfied(newQueryResult1)
+                && oriQueryResult.isPartialOrderSatisfied(newQueryResult2)) {
+                    System.out.println(oriQueryResult.toString());
+                    System.out.println(newQueryResult1.toString());
+                    System.out.println(newQueryResult2.toString());
+            System.out.println(oridb + " Plan Enumerator is correct");
+        } else {
+            System.out.println(oridb + " Plan Enumerator is incorrect");
+            // TODO: Compare Q-Error to check Cardinality Estimation or Cost Model
         }
     }
 }

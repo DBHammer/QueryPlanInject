@@ -113,7 +113,6 @@ public class TiDBInstance implements DBInstance {
         }
     }
 
-    // TODO UPDATE
     @Override
     public String generateJoinOrderHint(List<String> joinOrder) {
         if (joinOrder == null || joinOrder.isEmpty())
