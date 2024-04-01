@@ -6,6 +6,8 @@ import org.dbhammer.bean.QueryPlanInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -127,10 +129,13 @@ public class Main {
 
     public static void compare(CostAndLatencyPair oriQueryResult, CostAndLatencyPair newQueryResult1,
             CostAndLatencyPair newQueryResult2, String oridb, String db1, String db2) {
+        StringBuilder content = new StringBuilder();
+        content.append(oridb + "\t" + db1 + "\t" + db2 + "\t" + oridb + " plan enumerator is correct").append("\n");
         // 计算加速比并打印结果
         if (newQueryResult1.getLatency() < oriQueryResult.getLatency()) {
             double speedup1 = (double) oriQueryResult.getLatency() /
                     newQueryResult1.getLatency();
+            writeStringToFile(db1, db2);
             System.out.println(db1 + " Speed-up: " + speedup1);
         }
         if (newQueryResult2.getLatency() < oriQueryResult.getLatency()) {
@@ -138,15 +143,38 @@ public class Main {
                     newQueryResult2.getLatency();
             System.out.println(db2 + " Speed-up: " + speedup2);
         }
+        Boolean falg = false;
         if (oriQueryResult.isPartialOrderSatisfied(newQueryResult1)
                 && oriQueryResult.isPartialOrderSatisfied(newQueryResult2)) {
-                    System.out.println(oriQueryResult.toString());
-                    System.out.println(newQueryResult1.toString());
-                    System.out.println(newQueryResult2.toString());
+            System.out.println(oriQueryResult.toString());
+            System.out.println(newQueryResult1.toString());
+            System.out.println(newQueryResult2.toString());
             System.out.println(oridb + " Plan Enumerator is correct");
+            falg = true;
         } else {
             System.out.println(oridb + " Plan Enumerator is incorrect");
             // TODO: Compare Q-Error to check Cardinality Estimation or Cost Model
+        }
+        content.append(
+                oriQueryResult.getLatency() + "\t" + newQueryResult1.getLatency() + "\t" + newQueryResult2.getLatency()
+                        + "\t" + falg)
+                .append("\n");
+        writeStringToFile(content.toString(), oridb+".csv");
+    }
+
+    public static void writeStringToFile(String content, String filePath) {
+        try {
+            // 将字符串转换为字节数组
+            byte[] bytes = content.getBytes();
+
+            // 获取文件路径
+            Path path = Paths.get(filePath);
+
+            // 将字节数组写入文件
+            Files.write(path, bytes);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
